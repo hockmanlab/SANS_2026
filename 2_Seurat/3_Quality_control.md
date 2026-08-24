@@ -1,0 +1,243 @@
+## Quality Control (QC)
+
+Before continuing with downstream analysis, we need to assess the quality of the individual cells in our dataset. **Quality control (QC)** helps us identify cells that may contain too little RNA, have unusually high RNA content, or show signs of cellular stress or damage.
+
+There are three commonly used QC metrics in Seurat:
+
+* **`nCount_RNA`** — the total number of UMIs detected in each cell. This gives an indication of the overall amount of RNA captured from a cell.
+* **`nFeature_RNA`** — the number of genes detected in each cell. Cells with very few detected genes may be low-quality cells.
+* **`percent.mt`** — the percentage of transcripts originating from mitochondrial genes. A high mitochondrial percentage can indicate stressed or damaged cells.
+
+These metrics should be considered together rather than using a single metric to determine whether a cell is good or bad. For example, a cell with very few detected genes may be a low-quality cell, while a cell with an unusually high number of genes and UMIs may potentially contain more than one cell (**a doublet**).
+
+Importantly, QC thresholds are **dataset-dependent**. The appropriate thresholds can vary depending on the tissue, sample quality, sequencing depth, and experimental protocol. Therefore, we first visualise the QC metrics before deciding which cells to remove.
+
+### Calculating mitochondrial RNA percentage
+
+For our QC analysis, we also need to calculate the percentage of RNA originating from mitochondrial genes.
+
+The naming convention for mitochondrial genes differs between species. Human mitochondrial genes commonly begin with `MT-`, whereas mouse mitochondrial genes commonly begin with `mt-`. Since this tutorial uses a **mouse sample**, we should check the gene names in our dataset before selecting the pattern.
+
+For example, we can check the mitochondrial gene names with:
+
+```r
+head(grep("^mt-", rownames(query), value = TRUE))
+```
+
+If the mouse genes use the `mt-` convention, we calculate the mitochondrial percentage using:
+
+```r id="8g4m1w"
+# =============================================================================
+# 8. QUALITY CONTROL (QC)
+# =============================================================================
+
+# Calculate mitochondrial percentage
+query[["percent.mt"]] <- PercentageFeatureSet(
+  query,
+  pattern = "^mt-"
+)
+
+# Inspect the calculated metadata
+head(query[[]], 5)
+```
+
+This adds a new column called **`percent.mt`** to the cell metadata. The value represents the percentage of each cell's detected RNA that comes from mitochondrial genes.
+
+> **Note:** Always check the gene naming convention in your dataset before calculating mitochondrial percentage. Using `^MT-` for a dataset whose mouse genes are named `mt-`, for example, would result in the mitochondrial percentage being calculated incorrectly.
+
+## Visualising QC Metrics Before Filtering
+
+Before removing any cells, we visualise the three QC metrics. This allows us to examine the distributions and make an informed decision about appropriate filtering thresholds.
+
+### Violin plots
+
+```r id="x5r8cl"
+# =============================================================================
+# 9. VISUALIZE QC METRICS BEFORE FILTERING
+# =============================================================================
+
+vln_plot <- VlnPlot(
+  query,
+  features = c(
+    "nFeature_RNA",
+    "nCount_RNA",
+    "percent.mt"
+  ),
+  ncol = 3
+)
+
+vln_plot
+
+ggsave(
+  filename = file.path(
+    PLOTS_DIR,
+    "pre_filter_violin_plot.png"
+  ),
+  plot = vln_plot,
+  width = 12,
+  height = 10,
+  dpi = 300
+)
+```
+
+The violin plots show the distribution of each QC metric across all cells. They can help us identify cells at the extreme ends of the distributions.
+
+The figure is also saved to the `plots` directory so that the QC results are available after the R session has finished.
+
+### QC scatter plots
+
+We can also examine relationships between the QC metrics using scatter plots:
+
+```r id="2y6m8h"
+# -----------------------------------------------------------------------------
+# QC scatter plots
+# -----------------------------------------------------------------------------
+
+plot1 <- FeatureScatter(
+  query,
+  feature1 = "nCount_RNA",
+  feature2 = "percent.mt"
+)
+
+plot2 <- FeatureScatter(
+  query,
+  feature1 = "nCount_RNA",
+  feature2 = "nFeature_RNA"
+)
+
+qc_scatter <- plot1 + plot2
+
+qc_scatter
+
+ggsave(
+  filename = file.path(
+    PLOTS_DIR,
+    "pre_filter_feature_scatter.png"
+  ),
+  plot = qc_scatter,
+  width = 10,
+  height = 5,
+  dpi = 300
+)
+```
+
+The first plot shows the relationship between **total UMI counts and mitochondrial percentage**, while the second shows the relationship between **total UMI counts and the number of detected genes**.
+
+These plots are useful for identifying unusual populations of cells and deciding where sensible filtering boundaries might lie.
+
+## Filtering Low-Quality Cells
+
+After inspecting the distributions, we can apply QC thresholds to remove cells that fall outside our chosen range.
+
+For this tutorial, we use:
+
+* `nFeature_RNA > 200`
+* `nFeature_RNA < 10000`
+* `percent.mt < 5`
+
+The filtering step is:
+
+```r id="4j2x7v"
+# =============================================================================
+# 10. FILTER LOW-QUALITY CELLS
+# =============================================================================
+
+cells_before_qc <- ncol(query)
+
+query <- subset(
+  query,
+  subset =
+    nFeature_RNA > 200 &
+    nFeature_RNA < 10000 &
+    percent.mt < 5
+)
+
+cells_after_qc <- ncol(query)
+
+cells_removed <- cells_before_qc - cells_after_qc
+
+cat(
+  "Cells before QC:", cells_before_qc, "\n",
+  "Cells after QC:", cells_after_qc, "\n",
+  "Cells removed:", cells_removed, "\n"
+)
+```
+
+The `nFeature_RNA > 200` threshold removes cells with very few detected genes, which may represent low-quality or poorly captured cells.
+
+The upper threshold of `nFeature_RNA < 10000` can help flag cells with unusually large numbers of detected genes. Such cells may potentially be **doublets**, where two cells have been captured together. However, this threshold **does not identify doublets with certainty**. Dedicated doublet-detection methods, such as `scDblFinder`, can be used for a more rigorous analysis.
+
+Finally, `percent.mt < 5` removes cells with a high proportion of mitochondrial transcripts. High mitochondrial RNA can be associated with stressed or damaged cells. However, **5% is only a starting threshold** and may not be appropriate for every tissue or experimental protocol.
+
+> **Important:** These thresholds are examples for this tutorial and should not be treated as universal biological cutoffs. In a real analysis, thresholds should be chosen after inspecting the QC distributions and considering the characteristics of the specific dataset.
+
+## Checking QC After Filtering
+
+After filtering, we should visualise the same QC metrics again to confirm the effect of our filtering.
+
+```r id="7q1m4p"
+# =============================================================================
+# 11. QC AFTER FILTERING
+# =============================================================================
+
+vln_filter <- VlnPlot(
+  query,
+  features = c(
+    "nFeature_RNA",
+    "nCount_RNA",
+    "percent.mt"
+  ),
+  ncol = 3,
+  pt.size = 0.001
+)
+
+vln_filter
+
+ggsave(
+  filename = file.path(
+    PLOTS_DIR,
+    "post_filter_violin_plot.png"
+  ),
+  plot = vln_filter,
+  width = 12,
+  height = 10,
+  dpi = 300
+)
+```
+
+We can also regenerate the scatter plots:
+
+```r id="j7f3xq"
+plot1 <- FeatureScatter(
+  query,
+  feature1 = "nCount_RNA",
+  feature2 = "percent.mt"
+) +
+  theme(legend.position = "none")
+
+plot2 <- FeatureScatter(
+  query,
+  feature1 = "nCount_RNA",
+  feature2 = "nFeature_RNA"
+) +
+  theme(legend.position = "none")
+
+filter_scatter <- plot1 + plot2
+
+filter_scatter
+
+ggsave(
+  filename = file.path(
+    PLOTS_DIR,
+    "post_filter_feature_scatter.png"
+  ),
+  plot = filter_scatter,
+  width = 10,
+  height = 5,
+  dpi = 300
+)
+```
+
+Comparing the **pre-filtering** and **post-filtering** plots allows us to see how the QC thresholds affected the dataset. At this point, cells with very low gene detection or high mitochondrial percentages have been removed, and cells with unusually high gene counts have been flagged through the chosen upper threshold.
+
+The resulting Seurat object is now ready for the next stage of the workflow: **normalization and identification of highly variable genes**.
