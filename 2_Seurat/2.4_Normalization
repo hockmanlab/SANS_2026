@@ -1,0 +1,8 @@
+query <- SCTransform(
+  query,
+  vars.to.regress = "percent.mt",
+  verbose = FALSE
+)
+
+Assays(query)
+query
