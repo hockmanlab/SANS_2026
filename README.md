@@ -13,10 +13,8 @@ Single-nucleus analysis allows us to explore:
 
 - Cell-type composition
 - Cellular heterogeneity
-- Brain cell populations
 - Cell-specific gene expression
-- Nuclear populations and clusters
-- Marker genes and cell-type identities
+- Marker genes and cell-type identities and more.
 
 ## 🧪 Practical Dataset
 
