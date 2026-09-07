@@ -1,0 +1,594 @@
+---
+title: "Clustering and annotation"
+author: "Bismark Appiah, PhD."
+date: "`r format(Sys.time(), '%d/%m/%y')`"
+output:
+  pdf_document:
+    toc: true
+  html_document:
+    toc: true
+    number_sections: true
+    code_folding: hide
+    self_contained: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+# Clustering and annotation
+
+**Aim of this section:**  
+Identify transcriptionally distinct cell populations and assign biological cell-type identities using marker genes and reference-based annotation
+
+# Install required packages
+
+Run this section once before the workshop.
+
+```{r install-packages, eval=FALSE}
+# Install required packages ####################################################
+# Run this section once before the workshop
+# CRAN packages
+cran_packages <- c(
+  "Seurat",
+  "sctransform",
+  "plyr",
+  "tidyverse",
+  "patchwork",
+  "ggrepel",
+  "data.table",
+  "hdf5r",
+  "HGNChelper",
+  "scales",
+  "openxlsx",
+  "remotes"
+)
+
+cran_missing <- cran_packages[
+  !cran_packages %in% rownames(installed.packages())
+]
+
+if (length(cran_missing) > 0) {
+  install.packages(cran_missing, dependencies = TRUE)
+}
+
+
+# Bioconductor packages
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+
+bioc_packages <- c(
+  "SingleCellExperiment",
+  "scater"
+)
+
+bioc_missing <- bioc_packages[
+  !bioc_packages %in% rownames(installed.packages())
+]
+
+if (length(bioc_missing) > 0) {
+  BiocManager::install(bioc_missing, ask = FALSE, update = FALSE)
+}
+
+
+# GitHub packages
+if (!requireNamespace("SeuratWrappers", quietly = TRUE)) {
+  remotes::install_github(
+    "satijalab/seurat-wrappers",
+    upgrade = "never"
+  )
+}
+
+if (!requireNamespace("Azimuth", quietly = TRUE)) {
+  remotes::install_github(
+    "satijalab/azimuth",
+    ref = "master",
+    upgrade = "never"
+  )
+}
+```
+
+# Load libraries
+
+```{r load-libraries, message=FALSE, warning=FALSE}
+# Load libraries ###############################################################
+if (TRUE){
+  library(Seurat)
+  library(sctransform)
+  library(SeuratWrappers)
+  library(SingleCellExperiment)
+  library(plyr)
+  library(dplyr)
+  library(ggplot2)
+  library(patchwork)
+  library(readr)  
+  library(scater)
+  library(openxlsx)
+  library(tidyverse)
+  library(ggrepel)
+  library(data.table)
+  library(tibble)
+  library(hdf5r)
+  library(HGNChelper)
+  library(scales)
+  library(Azimuth)
+}
+```
+
+# Pre-processing
+
+Uncomment and run if pre-processing is required.
+
+```{r preprocessing, eval=FALSE}
+# Uncomment and run if pre-processing required
+# Pre-processing | If needed ##############################################################
+if (TRUE){
+
+
+  # Load 10x data
+  counts <- Read10X_h5(
+    "filtered_feature_bc_matrix.h5"
+  )
+
+  # Create Seurat object
+  seu <- CreateSeuratObject(
+    counts = counts,
+    project = "singlecell_workshop",
+    min.cells = 3,
+    min.features = 200
+  )
+
+
+  # Calculate QC metrics
+  seu[["percent.mt"]] <- PercentageFeatureSet(
+    seu,
+    pattern = "^mt-"
+  )
+
+  # Look at QC metrics before filtering
+  VlnPlot(
+    seu,
+    features = c("nFeature_RNA", "nCount_RNA", "percent.mt"),
+    ncol = 3
+  )
+
+
+  # Filter low-quality cells
+  seu <- subset(
+    seu,
+    subset =
+      nFeature_RNA > 200 &
+      nFeature_RNA < 10000 &
+      percent.mt < 5
+  )
+
+  # SCTransform
+  seu <- SCTransform(
+    seu,
+    vst.flavor = "v2",
+    variable.features.n = 3000,
+    verbose = TRUE
+  )
+
+
+  # Compute PCA
+  seu <- RunPCA(
+    seu,
+    assay = "SCT",
+    npcs = 150,
+    verbose = TRUE
+  )
+
+
+
+  # Save pre-processed object
+  saveRDS(
+    seu,
+    file = "~/Documents/AA_UCT/singlecell_workshop/seurat_preprocessed_SCT.rds"
+  )
+
+}
+```
+
+# Load pre-processed data
+
+```{r load-preprocessed-data}
+# Load pre-processed data   ####################################################
+seu <- readRDS("~/Documents/AA_UCT/singlecell_workshop/seurat_preprocessed_SCT.rds")
+
+# Inspect the object
+seu
+# Check metadata
+head(seu@meta.data)
+# Check available assays
+Assays(seu)
+# Inspect most variable genes
+head(VariableFeatures(seu))
+# Inspect PCA
+# print(
+#   seu[["pca"]],
+#   dims = 1:10,
+#   nfeatures = 5
+# )
+
+# Examine genes contributing to PCs
+# VizDimLoadings(
+#   seu,
+#   dims = 1:4,
+#   reduction = "pca"
+# )
+
+# The elbow plot shows how much variation is captured by each PC.
+# PCs before the curve begins to flatten generally contain more
+# biological structure and are selected for downstream analysis
+# Plot variance contribution
+ElbowPlot(
+  seu,
+  ndims = 100
+)
+```
+
+# Build neighbourhood graph
+
+```{r neighbourhood-graph}
+# Build neighbourhood graph ####################################################
+# A neighbourhood graph represents cells as connected points, where cells
+# with similar gene expression profiles are connected to each other.
+#
+# FindNeighbors() identifies similar cells in PCA space and constructs
+# a Shared Nearest Neighbor (SNN) graph. This graph is then used by
+# FindClusters() to identify groups of highly connected cells
+seu <- FindNeighbors(
+  seu,
+  reduction = "pca",
+  dims = 1:20
+)
+# Choose PCs for downstream analysis
+# Adjust after examining the elbow plot
+dims_use <- 1:20
+```
+
+# Find clusters
+
+```{r find-clusters}
+# FindClusters    ##############################################################
+
+# FindClusters() uses the cell-cell neighborhood graph previously constructed by the function "FindNeighbors()" 
+# NOTE: It does NOT cluster cells directly from the expression matrix or UMAP coordinates
+# The most important parameter to explore is "resolution"
+# Resolution controls the granularity of the clustering:
+#
+#   Lower resolution <- fewer, larger clusters
+#   Higher resolution <- more, smaller clusters
+#
+# For example:
+#
+#   resolution = 0.2 <- broad cell populations
+#   resolution = 0.5 <- intermediate clustering
+#   resolution = 1.0 <-  more fine-grained clustering
+#
+# Note:
+# Resolution does NOT correspond to a fixed number of clusters.
+# A resolution of 0.5 does not mean 5 clusters
+#
+# There is also no universally "correct" resolution.
+# The appropriate value depends on the dataset and biological
+# question. Clusters should ultimately be evaluated using marker
+# genes and biological knowledge
+
+
+# Set a positive random seed for reproducibility
+# The specific number is arbitrary; using the same seed helps
+# reproduce the same clustering results
+seu <- FindClusters(
+  seu,
+  resolution = 0.05,
+  algorithm = 4,
+  random.seed = 453
+)
+
+# Number of cells per cluster
+table(seu$seurat_clusters)
+
+# Inspect current identities
+levels(seu)
+```
+
+## Test different clustering resolutions
+
+```{r clustering-resolutions}
+# Test different clustering resolution #########################################
+seu <- FindClusters(
+  seu,
+  resolution = c(
+    0.1,
+    0.2,
+    0.3,
+    0.5,
+    1
+  ),
+  algorithm = 4,
+  random.seed = 453
+)
+
+# View resulting metadata columns
+colnames(seu@meta.data)
+```
+
+# Compute UMAP
+
+```{r compute-umap}
+# Compute UMAP #################################################################
+# UMAP = Uniform Manifold Approximation and Projection
+# It reduces high-dimensional data to 2D for visualisation
+# Similar cells tend to appear closer together
+# UMAP visualises the data; it does not define the clusters
+seu <- RunUMAP(
+  seu,
+  dims = dims_use,
+  seed.use = 453
+)
+```
+
+## Compare clustering resolutions
+
+```{r compare-resolutions}
+# Compare clustering resolutions on the same UMAP ##############################
+# We will use the same UMAP to compare different clustering
+# resolutions.
+
+DimPlot(
+  seu,
+  reduction = "umap",
+  group.by = c(
+    "SCT_snn_res.0.05",
+    "SCT_snn_res.0.1",
+    "SCT_snn_res.0.2",
+    "SCT_snn_res.0.3",
+    "SCT_snn_res.0.5",
+    "SCT_snn_res.1"
+  ),
+  label = TRUE,
+  repel = TRUE,
+  ncol = 3
+) & NoLegend()
+```
+
+## Select clustering resolution for downstream analysis
+
+```{r select-resolution}
+# Select clustering resolution for downstream analysis #########################
+# After comparing different resolutions, we select resolution 0.3
+# for downstream analysis.
+#
+# Set these cluster assignments as the active cell identities
+
+Idents(seu) <- "SCT_snn_res.0.3"
+
+# Check the selected clusters
+table(Idents(seu))
+
+# Visualise the selected clustering
+DimPlot(
+  seu,
+  reduction = "umap",
+  label = TRUE,
+  repel = TRUE
+) & NoLegend()
+```
+
+# Find cluster marker genes
+
+```{r, fig.width=16, fig.height=9}
+# Find cluster marker genes ####################################################
+
+# FindAllMarkers() identifies genes enriched in each cluster
+# compared with the other cells
+#
+# These marker genes help us infer the biological identity
+# of each cluster
+# Important columns include:
+# avg_log2FC = how strongly the gene is enriched in the cluster
+# pct.1 = proportion of cells in the cluster expressing the gene
+# pct.2 = proportion of cells outside the cluster expressing the gene
+# p_val_adj = multiple-testing adjusted p-value
+
+DefaultAssay(seu) <- "SCT"
+
+markers <- FindAllMarkers(
+  seu,
+  only.pos = TRUE,
+  min.pct = 0.25, # gene is only tested if it is detected in at least 25% of cells in either the cluster or the comparison population
+  logfc.threshold = 0.1 # genes with at least about 0.1 log2 fold-change in average expression
+)
+
+# Keep informative markers for cell-type annotation
+markers_clean <- markers %>%
+  dplyr::filter(
+    p_val_adj < 0.05,
+    !grepl("^Gm", gene),        # predicted mouse genes
+    !grepl("^Rik|Rik$", gene),  # starts or ends with Rik
+    !grepl("^ENS", gene),       # Ensembl IDs that did not map to conventional gene symbols
+    !grepl("^Rpl|^Rps", gene),  # ribosomal genes
+    !grepl("^mt-", gene)        # mitochondrial genes
+  )
+# Look at the top marker genes for each cluster
+top_markers <- markers_clean %>%
+  dplyr::group_by(cluster) %>%
+  dplyr::slice_max(order_by = avg_log2FC, n = 5)
+
+top_markers
+
+# Visualise top markers
+DoHeatmap(
+  seu,
+  features = unique(top_markers$gene)
+) + NoLegend()
+```
+
+# Cluster annotation - manual and automated
+
+## Manual cluster annotation
+
+```{r manual-marker-annotation}
+# Cluster annotation - manual and automated ###########################################################
+## Manual cluster annotation ###################################################
+
+# Cell types can be assigned by examining known marker genes
+# Below are examples of common markers in mouse brain
+
+# In a DotPlot:
+# dot size represents the percentage of cells expressing the gene
+# colour represents the average expression level
+#
+# Cell types are identified from combinations of marker genes
+# rather than relying on a single marker.
+
+DotPlot(
+  seu,
+  features = c(
+    # GABAergic / inhibitory neurons
+    "Gad2", "Erbb4", "Dlx6os1", "Nxph1",
+    
+    # Deep-layer / projection neurons
+    "Foxp2", "Syt6", "Fezf2",
+    
+    # Astrocyte / glial
+    "Slc39a12", "Gldc", "Mertk",
+    
+    # Endothelial cells
+    "Slco1a4", "Flt1", "Adgrl4",
+    
+    # Vascular / leptomeningeal cells
+    "Slc6a13", "Aldh1a2", "Ranbp3l",
+    
+    # Other neuronal populations
+    "Otof", "Glra3", "Gsg1l",
+    "Ebf2", "Ebf3", "Tshz2"
+  ),
+  dot.scale = 6
+) +
+  RotatedAxis()
+```
+
+## Assign biological labels
+
+```{r assign-biological-labels}
+## After examining the marker genes, assign biological labels ##################
+
+# Rename cluster identities based on marker expression.
+# These labels should be adjusted after inspecting the DotPlot
+# and additional markers where necessary
+
+# Check current cluster identities
+levels(Idents(seu))
+
+# Assign labels to clusters
+celltype_labels <- c(
+  "1"  = "Neurons",
+  "2"  = "Neurons",
+  "3"  = "GABAergic neurons",
+  "4"  = "Astrocyte-like glia",
+  "5"  = "Neurons",
+  "6"  = "Deep-layer projection neurons",
+  "7"  = "Endothelial cells",
+  "8"  = "Neurons",
+  "9"  = "Deep-layer projection neurons",
+  "10" = "Neurons",
+  "11" = "VLMCs",
+  "12" = "Neurons",
+  "13" = "Pericytes",
+  "14" = "projection neurons",
+  "15" = "Oligodendrocytes",
+  "16" = "Glutamatergic neurons",
+  "17" = "Astroglial cells"
+)
+
+# Rename cluster identities
+seu <- RenameIdents(
+  seu,
+  celltype_labels
+)
+
+# Save manual annotation in metadata
+seu$manual_annotation <- Idents(seu)
+
+# Visualise manual annotations
+DimPlot(
+  seu,
+  reduction = "umap",
+  group.by = "manual_annotation",
+  label = TRUE,
+  repel = TRUE
+) + NoLegend()
+```
+
+## Automated cluster annotation
+
+```{r automated-annotation}
+## Automated cluster annotation ################################################
+
+# Automated annotation maps cells to a well-annotated reference
+# dataset and transfers known cell-type labels to the query cells.
+# Each query cell is assigned the label of the most similar
+# cell population in the reference dataset
+# Azimuth provides reference-based annotation within Seurat
+
+
+seu <- RunAzimuth(
+  seu,
+  reference = "mousecortexref"
+)
+
+# View available prediction columns
+colnames(seu@meta.data)
+
+# Plot broad predicted cell classes
+DimPlot(
+  seu,
+  reduction = "umap",
+  group.by = "predicted.class",
+  label = TRUE,
+  repel = TRUE
+) + NoLegend()
+
+# Plot more detailed predicted subclasses
+DimPlot(
+  seu,
+  reduction = "umap",
+  group.by = "predicted.subclass",
+  label = TRUE,
+  repel = TRUE
+) 
+```
+
+## Automated vs manual annotation
+
+```{r, fig.width=14, fig.height=7}
+## Automated vs manual annotation #######################################
+
+# Automated annotation is useful as supporting evidence,
+# but predictions should always be checked against marker genes
+# and biological knowledge!
+
+# table(
+#   Manual = seu$manual_annotation,
+#   Azimuth = seu$predicted.subclass
+# )
+
+# Compare manual and Azimuth annotations on UMAP
+DimPlot(
+  seu,
+  reduction = "umap",
+  group.by = c("manual_annotation", "predicted.subclass"),
+  label = TRUE,
+  repel = TRUE,
+  ncol = 2
+)
+```
+
+# Session information
+
+```{r session-info}
+sessionInfo()
+```
