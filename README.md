@@ -74,3 +74,11 @@ The practical session will take participants **from 10x single-nucleus data to a
 | **Condition** | Saline control |
 | **Technology** | 10x Genomics Single-Nucleus RNA Sequencing (snRNA-seq) |
 | **Analysis** | R / Seurat |
+
+## 📋 Prerequisites
+
+Before starting the workshop, please make sure that **R, RStudio, and all required R packages** are installed.
+
+👉 **[Installation Guide](./2_Seurat/2.1_installation.md)**
+
+Please complete the installation before starting the practical session.
