@@ -2,7 +2,8 @@
 # Clustering and annotation ####################################################
 # Author: Bismark Appiah, PhD.
 # Aim of this section:
-# Identify groups of cells with similar gene expression profiles
+# Identify transcriptionally distinct cell populations and assign biological cell-type identities 
+# using marker genes and reference-based annotation
 # 
 
 # Install required packages ####################################################
