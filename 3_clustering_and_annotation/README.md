@@ -11,6 +11,8 @@ The following files are available in this repository:
 -   `clustering_annotation_BA.Rmd` -- Markdown script for hands-on
 -   `clustering_annotation_BA.html` -- Completed tutorial with expected
     outputs
+## Pre-processed Seurat Objects (SCTransform)
+https://github.com/hockmanlab/SANS_2026/releases/download/SCTransform_preprocessed_data/seurat_preprocessed_SCT.rds
 
 ## Instructions
 
