@@ -1,0 +1,544 @@
+
+# Clustering and annotation ####################################################
+# Author: Bismark Appiah, PhD.
+# Aim of this section:
+# Identify transcriptionally distinct cell populations and assign biological cell-type identities 
+# using marker genes and reference-based annotation
+# 
+
+# Install required packages ####################################################
+# Run this section once before the workshop
+
+# Increase the download timeout to prevent installation failures
+# for large packages and dependencies
+options(timeout = 1800)
+# CRAN packages
+cran_packages <- c(
+  "Seurat",
+  "sctransform",
+  "plyr",
+  "tidyverse",
+  "patchwork",
+  "ggrepel",
+  "data.table",
+  "hdf5r",
+  "HGNChelper",
+  "scales",
+  "openxlsx",
+  "R.utils",
+  "leidenbase",
+  "remotes"
+)
+
+cran_missing <- cran_packages[
+  !cran_packages %in% rownames(installed.packages())
+]
+
+if (length(cran_missing) > 0) {
+  install.packages(cran_missing, dependencies = TRUE)
+}
+
+
+# Bioconductor packages
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+
+bioc_packages <- c(
+  "SingleCellExperiment",
+  "scater"
+)
+
+bioc_missing <- bioc_packages[
+  !bioc_packages %in% rownames(installed.packages())
+]
+
+if (length(bioc_missing) > 0) {
+  BiocManager::install(bioc_missing, ask = FALSE, update = FALSE)
+}
+
+
+# GitHub packages
+if (!requireNamespace("SeuratWrappers", quietly = TRUE)) {
+  remotes::install_github(
+    "satijalab/seurat-wrappers",
+    upgrade = "never"
+  )
+}
+
+if (!requireNamespace("Azimuth", quietly = TRUE)) {
+  remotes::install_github(
+    "satijalab/azimuth",
+    ref = "master",
+    upgrade = "never"
+  )
+}
+
+
+# Load libraries ###############################################################
+if (TRUE){
+  library(Seurat)
+  library(sctransform)
+  library(SeuratWrappers)
+  library(SingleCellExperiment)
+  library(plyr)
+  library(dplyr)
+  library(ggplot2)
+  library(patchwork)
+  library(readr)  
+  library(scater)
+  library(openxlsx)
+  library(tidyverse)
+  library(ggrepel)
+  library(data.table)
+  library(tibble)
+  library(hdf5r)
+  library(HGNChelper)
+  library(scales)
+  library(Azimuth)
+}
+
+# Uncomment and run if pre-processing required
+# Pre-processing | If needed ##############################################################
+if (TRUE){
+
+
+  # Load 10x data
+  counts <- Read10X_h5(
+    "Documents/AA_UCT/singlecell_workshop/filtered_feature_bc_matrix.h5" # Replace with path to your directory
+  )
+
+  # Create Seurat object
+  query <- CreateSeuratObject(
+    counts = counts,
+    project = "singlecell_workshop",
+    min.cells = 3,
+    min.features = 200
+  )
+
+
+  # Calculate QC metrics
+  query[["percent.mt"]] <- PercentageFeatureSet(
+    query,
+    pattern = "^mt-"
+  )
+
+  # Look at QC metrics before filtering
+  VlnPlot(
+    query,
+    features = c("nFeature_RNA", "nCount_RNA", "percent.mt"),
+    ncol = 3
+  )
+
+
+  # Filter low-quality cells
+  query <- subset(
+    query,
+    subset =
+      nFeature_RNA > 200 &
+      nFeature_RNA < 10000 &
+      percent.mt < 5
+  )
+
+  # SCTransform
+  query <- SCTransform(
+    query,
+    vars.to.regress = "percent.mt",
+    verbose = FALSE
+  )
+
+
+  # Compute PCA
+  # query <- RunPCA(
+  #   query,
+  #   assay = "SCT",
+  #   verbose = FALSE
+  # )
+
+  # Save pre-processed object
+  saveRDS(
+    query,
+    file = "/Users/bismarkappiah/Documents/AA_UCT/clustering_and_annotation/seurat_preprocessed_SCT.rds"
+  )
+  # Save pre-processed object
+  # saveRDS(
+  #   query,
+  #   file = "PATH_TO_FILE"
+  # )
+
+}
+
+
+
+# Load pre-processed data  ####################################################
+# query <- readRDS("PATH/TO/DATA")
+
+## Selecting PCs for downstream analysis #######################################
+#
+# In the previous section, 15 PCs were selected based on the
+# elbow plot and inspection of the genes contributing to each PC.
+# In particular, some later PCs showed increased contribution
+# from mitochondrial genes.
+#
+# However, the number of PCs used for downstream analysis does
+# not have to be fixed at the first inspection. We can examine
+# additional PCs and ask whether they contain informative
+# biological signals.
+#
+# Here, we inspect PCs beyond the initial 15 to determine whether
+# additional components contain useful information.
+
+# Run PCA again and increase the number of principal components
+query <- RunPCA(
+  query,
+  assay = "SCT",
+  npcs = 100,
+  verbose = FALSE
+)
+# Inspect the object
+query
+# Check metadata
+head(query@meta.data)
+# Check available assays
+Assays(query)
+# Inspect most variable genes
+head(VariableFeatures(query))
+
+# Inspect PCA
+print(
+  query[["pca"]],
+  dims = 15:25, 
+  nfeatures = 5
+)
+
+
+# The elbow plot shows how much variation is captured by each PC.
+# PCs before the curve begins to flatten generally contain more
+# biological structure and are selected for downstream analysis
+# Plot variance contribution
+
+ElbowPlot(
+  query,
+  ndims = 100
+)
+
+# Choose PCs for downstream analysis
+# Adjust after examining the elbow plot
+dims_use <- 1:20
+
+
+# Build neighbourhood graph ####################################################
+# A neighbourhood graph represents cells as connected points, where cells
+# with similar gene expression profiles are connected to each other.
+#
+# FindNeighbors() identifies similar cells in PCA space and constructs
+# a Shared Nearest Neighbor (SNN) graph. This graph is then used by
+# FindClusters() to identify groups of highly connected cells
+query <- FindNeighbors(
+  query,
+  reduction = "pca",
+  dims = dims_use
+)
+
+
+
+# FindClusters    ##############################################################
+
+# FindClusters() uses the cell-cell neighborhood graph previously constructed by the function "FindNeighbors()" 
+# NOTE: It does NOT cluster cells directly from the expression matrix or UMAP coordinates
+# The most important parameter to explore is "resolution"
+# Resolution controls the granularity of the clustering:
+#
+#   Lower resolution <- fewer, larger clusters
+#   Higher resolution <- more, smaller clusters
+#
+# For example:
+#
+#   resolution = 0.2 <- broad cell populations
+#   resolution = 0.5 <- intermediate clustering
+#   resolution = 1.0 <-  more fine-grained clustering
+#
+# Note:
+# Resolution does NOT correspond to a fixed number of clusters.
+# A resolution of 0.5 does not mean 5 clusters
+#
+# There is also no universally "correct" resolution.
+# The appropriate value depends on the dataset and biological
+# question. Clusters should ultimately be evaluated using marker
+# genes and biological knowledge
+
+
+# Set a positive random seed for reproducibility
+# The specific number is arbitrary; using the same seed helps
+# reproduce the same clustering results
+query <- FindClusters(
+  query,
+  resolution = 0.05,
+  algorithm = 4,
+  random.seed = 453
+)
+
+# Number of cells per cluster
+table(query$seurat_clusters)
+
+# Inspect current identities
+levels(query)
+
+
+# Test different clustering resolution #########################################
+query <- FindClusters(
+  query,
+  resolution = c(
+    0.1,
+    0.2,
+    0.3,
+    0.5,
+    1
+  ),
+  algorithm = 4,
+  random.seed = 453
+)
+
+# View resulting metadata columns
+colnames(query@meta.data)
+
+# Compute UMAP #################################################################
+# UMAP = Uniform Manifold Approximation and Projection
+# It reduces high-dimensional data to 2D for visualisation
+# Similar cells tend to appear closer together
+# UMAP visualises the data; it does not define the clusters
+query <- RunUMAP(
+  query,
+  dims = dims_use,
+  seed.use = 453
+)
+
+# Compare clustering resolutions on the same UMAP ##############################
+# We will use the same UMAP to compare different clustering
+# resolutions.
+
+DimPlot(
+  query,
+  reduction = "umap",
+  group.by = c(
+    "SCT_snn_res.0.05",
+    "SCT_snn_res.0.1",
+    "SCT_snn_res.0.2",
+    "SCT_snn_res.0.3",
+    "SCT_snn_res.0.5",
+    "SCT_snn_res.1"
+  ),
+  label = TRUE,
+  repel = TRUE,
+  ncol = 3
+) & NoLegend()
+
+
+
+# Select clustering resolution for downstream analysis #########################
+# After comparing different resolutions, we select resolution 0.3
+# for downstream analysis.
+#
+# Set these cluster assignments as the active cell identities
+
+Idents(query) <- "SCT_snn_res.0.3"
+
+# Check the selected clusters
+table(Idents(query))
+
+# Visualise the selected clustering
+DimPlot(
+  query,
+  reduction = "umap",
+  label = TRUE,
+  repel = TRUE
+) & NoLegend()
+
+
+# Find cluster marker genes ####################################################
+
+# FindAllMarkers() identifies genes enriched in each cluster
+# compared with the other cells
+#
+# These marker genes help us infer the biological identity
+# of each cluster
+
+DefaultAssay(query) <- "SCT"
+
+markers <- FindAllMarkers(
+  query,
+  only.pos = TRUE,
+  min.pct = 0.25, # gene is only tested if it is detected in at least 25% of cells in either the cluster or the comparison population
+  logfc.threshold = 0.1 # genes with at least about 0.1 log2 fold-change in average expression
+)
+
+# Keep informative markers for cell-type annotation
+markers_clean <- markers %>%
+  dplyr::filter(
+    p_val_adj < 0.05,
+    !grepl("^Gm", gene),        # predicted mouse genes
+    !grepl("^Rik|Rik$", gene),  # starts or ends with Rik
+    !grepl("^ENS", gene),       # Ensembl IDs that did not map to conventional gene symbols
+    !grepl("^Rpl|^Rps", gene),  # ribosomal genes
+    !grepl("^mt-", gene)        # mitochondrial genes
+  )
+# Look at the top marker genes for each cluster
+top_markers <- markers_clean %>%
+  dplyr::group_by(cluster) %>%
+  dplyr::slice_max(order_by = avg_log2FC, n = 5)
+
+top_markers
+
+# Visualise top markers
+DoHeatmap(
+  query,
+  features = unique(top_markers$gene)
+) + NoLegend()
+
+
+# Cluster annotation - manual and automated ###########################################################
+## Manual cluster annotation ###################################################
+
+# Cell types can be assigned by examining known marker genes
+# Below are examples of common markers in mouse brain
+
+# In a DotPlot:
+# dot size represents the percentage of cells expressing the gene
+# colour represents the average expression level
+#
+# Cell types are identified from combinations of marker genes
+# rather than relying on a single marker.
+
+DotPlot(
+  query,
+  features = c(
+    # GABAergic / inhibitory neurons
+    "Gad2", "Erbb4", "Dlx6os1", "Nxph1",
+    
+    # Deep-layer / projection neurons
+    "Foxp2", "Syt6", "Fezf2",
+    
+    # Astrocyte / glial
+    "Slc39a12", "Gldc", "Mertk",
+    
+    # Endothelial cells
+    "Slco1a4", "Flt1", "Adgrl4",
+    
+    # Vascular / leptomeningeal cells
+    "Slc6a13", "Aldh1a2", "Ranbp3l",
+    
+    # Other neuronal populations
+    "Otof", "Glra3", "Gsg1l",
+    "Ebf2", "Ebf3", "Tshz2"
+  ),
+  dot.scale = 6
+) +
+  RotatedAxis()
+
+
+## After examining the marker genes, assign biological labels ##################
+
+# Rename cluster identities based on marker expression.
+# These labels should be adjusted after inspecting the DotPlot
+# and additional markers where necessary
+
+# Check current cluster identities
+levels(Idents(query))
+
+# Assign labels to clusters
+celltype_labels <- c(
+  "1"  = "Neurons",
+  "2"  = "Neurons",
+  "3"  = "GABAergic neurons",
+  "4"  = "Astrocyte-like glia",
+  "5"  = "Neurons",
+  "6"  = "Deep-layer projection neurons",
+  "7"  = "Endothelial cells",
+  "8"  = "Neurons",
+  "9"  = "Deep-layer projection neurons",
+  "10" = "Neurons",
+  "11" = "VLMCs",
+  "12" = "Neurons",
+  "13" = "Pericytes",
+  "14" = "projection neurons",
+  "15" = "Oligodendrocytes",
+  "16" = "Glutamatergic neurons",
+  "17" = "Astroglial cells"
+)
+
+# Rename cluster identities
+query <- RenameIdents(
+  query,
+  celltype_labels
+)
+
+# Save manual annotation in metadata
+query$manual_annotation <- Idents(query)
+
+# Visualise manual annotations
+DimPlot(
+  query,
+  reduction = "umap",
+  group.by = "manual_annotation",
+  label = TRUE,
+  repel = TRUE
+) + NoLegend()
+
+
+## Automated cluster annotation ################################################
+
+# Automated annotation maps cells to a well-annotated reference
+# dataset and transfers known cell-type labels to the query cells.
+# Each query cell is assigned the label of the most similar
+# cell population in the reference dataset
+# Azimuth provides reference-based annotation within Seurat
+
+
+query <- RunAzimuth(
+  query,
+  reference = "mousecortexref"
+)
+
+# View available prediction columns
+colnames(query@meta.data)
+
+# Plot broad predicted cell classes
+DimPlot(
+  query,
+  reduction = "umap",
+  group.by = "predicted.class",
+  label = TRUE,
+  repel = TRUE
+) + NoLegend()
+
+# Plot more detailed predicted subclasses
+DimPlot(
+  query,
+  reduction = "umap",
+  group.by = "predicted.subclass",
+  label = TRUE,
+  repel = TRUE
+) 
+
+## Automated vs manual annotation #######################################
+
+# Automated annotation is useful as supporting evidence,
+# but predictions should always be checked against marker genes
+# and biological knowledge!
+
+# table(
+#   Manual = query$manual_annotation,
+#   Azimuth = query$predicted.subclass
+# )
+
+# Compare manual and Azimuth annotations on UMAP
+DimPlot(
+  query,
+  reduction = "umap",
+  group.by = c("manual_annotation", "predicted.subclass"),
+  label = TRUE,
+  repel = TRUE,
+  ncol = 2
+)
+
+sessionInfo()
