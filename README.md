@@ -80,3 +80,9 @@ Before starting the workshop, please make sure that **R, RStudio, and all requir
 👉 **[Installation Guide](./2_Seurat/2.1_installation.md)**
 
 Please complete the installation before starting the practical session.
+
+System requirements
+
+The workshop was tested on macOS and Windows systems with 8–16 GB RAM.
+
+A minimum of 8 GB RAM is recommended; 16 GB or more is preferable for smoother performance.
