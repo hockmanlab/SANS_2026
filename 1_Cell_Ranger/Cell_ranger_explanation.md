@@ -223,7 +223,9 @@ The Cell Ranger output file for this tutorial is available from the Hockman Lab 
 
 You can download the `saline_day17_web_summary.html` file using the link below and then open it in your web browser to view the interactive Cell Ranger report:
 
-[Download the `saline_day17_web_summary.html` file](https://github.com/hockmanlab/SANS_2026/blob/main/1_Cell_Ranger/saline_day17_web_summary.html)
+[Download the `saline_day17_web_summary.html` file](https://raw.githubusercontent.com/hockmanlab/SANS_2026/main/1_Cell_Ranger/saline_day17_web_summary.html)
+
+After downloading the file, open it in your web browser to view the interactive Cell Ranger report.
 
 After downloading the file:
 
