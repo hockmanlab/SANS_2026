@@ -1,6 +1,6 @@
 # 1.1 Cell Ranger Count
 
-For the official Cell Ranger documentation, see the [10x Genomics Cell Ranger documentation](https://www.10xgenomics.com/support/software/cell-ranger/latest).
+For the official Cell Ranger documentation, see the [10x Genomics Cell Ranger documentation](https://www.10xgenomics.com/support/software/cell-ranger/latest/tutorials/cr-tutorial-ct).
 
 After sequencing, you will receive **FASTQ files** containing the raw sequencing reads from your samples. These files need to be processed before we can perform downstream single-cell RNA-seq analysis in Seurat.
 
