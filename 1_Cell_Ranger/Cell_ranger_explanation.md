@@ -17,11 +17,11 @@ For our data, Cell Ranger was run using the following Bash script:
 ```bash
 #!/bin/bash
 
-cellranger count --id=run_count_MJ5 \
---fastqs=/scratch/jmlkha003/MJ5 \
---transcriptome ../refdata-gex-mm10-2020-A \
---sample=MJ4-AK2831_H37WYDSX3,MJ4-AK2832_H37WYDSX3,MJ4-AK2833_H37WYDSX3,MJ4-AK2834_H37WYDSX3 \
---include-introns=true
+cellranger count --id=cell_ranger_d17_saline_KJ1 \
+   --fastqs=/scratch/jmlkha003/kramnik/kramnik_samples_2025/d17_saline_KJ1/KJ1 \
+   --sample=KJ1-SCI7T008-SCI5T008_2373HCLT4 \
+   --transcriptome=/scratch/jmlkha003/kramnik_samples/alignment_files/refdata-gex-GRCm39-2024-A \
+   --include-introns=true
 ```
 
 The main arguments in this command are:
