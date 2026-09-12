@@ -118,8 +118,6 @@ On a Mac, you can find the path to a folder using **Finder**.
 3. Right-click the folder.
 4. Select **Get Info** to view information about the folder.
 
-You can also hold the **Option (⌥)** key while right-clicking the folder and select **Copy "... " as Pathname**. This copies the full path to your clipboard.
-
 You can then paste the path into your R or Bash code.
 
 For example:
@@ -133,8 +131,6 @@ This could then be used as:
 ```bash
 --fastqs=/Users/yourname/Documents/SANS_2026/data/MJ5
 ```
-
-Another option is to open **Terminal**, type `cd ` (including the space), and then drag the folder from Finder into the Terminal window. macOS will automatically insert the folder's path.
 
 ### Windows
 
@@ -156,20 +152,6 @@ When using paths in R, it is often easier to use forward slashes:
 
 ```r
 "C:/Users/yourname/Documents/SANS_2026/data/MJ5"
-```
-
-If you are running Bash through **WSL (Windows Subsystem for Linux)**, the path format is different. Windows drives are accessed through `/mnt/`.
-
-For example:
-
-```text
-C:\Users\yourname\Documents\SANS_2026\data\MJ5
-```
-
-would typically be accessed in WSL as:
-
-```text
-/mnt/c/Users/yourname/Documents/SANS_2026/data/MJ5
 ```
 
 > **Note:** The directory path depends on where you saved your files and which operating system or computing environment you are using.
