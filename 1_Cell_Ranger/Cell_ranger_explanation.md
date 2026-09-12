@@ -257,8 +257,7 @@ The main output files are:
 
 * **`metrics_summary.csv`** — contains key Cell Ranger summary metrics in a tabular format, which can be useful for checking the overall quality of the sequencing and cell-calling results.
 
-In the next section, we will read in the **`filtered_feature_bc_matrix.h5`** and **`filtered_feature_bc_matrix/`** 
----
+In the next section, we will read in the  **`filtered_feature_bc_matrix.h5`** and **`filtered_feature_bc_matrix/`** 
 
 > **Note:** The exact output files can vary depending on the Cell Ranger version and options used. Always check the documentation for the version of Cell Ranger being used.
 
