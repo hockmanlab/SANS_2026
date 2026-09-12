@@ -28,14 +28,14 @@ cellranger count --id=cell_ranger_d17_saline_KJ1 \
 
 The main arguments in this command are:
 
-* `--id=run_count_MJ5`  
+* `--id=cell_ranger_d17_saline_KJ1`  
   Specifies the name of the Cell Ranger run and the directory in which the output will be stored.
 
-* `--fastqs=/scratch/jmlkha003/MJ5`  
+* `--fastqs=/scratch/jmlkha003/kramnik/kramnik_samples_2025/d17_saline_KJ1/KJ1`  
   Specifies the location of the FASTQ files that will be processed.
 
-* `--transcriptome ../refdata-gex-mm10-2020-A`  
-  Specifies the **10x-compatible reference transcriptome** used to align and annotate the sequencing reads. Here, the reference is the mouse **mm10** reference.
+* `--transcriptome /scratch/jmlkha003/kramnik_samples/alignment_files/refdata-gex-GRCm39-2024-A`  
+  Specifies the **10x-compatible reference transcriptome** used to align and annotate the sequencing reads. Here, the reference is the mouse **GRCm39** reference.
 
 * `--sample=...`  
   Specifies the FASTQ sample prefixes that should be processed. Multiple sample prefixes can be provided as a comma-separated list.
