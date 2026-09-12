@@ -52,7 +52,7 @@ When running Cell Ranger, you will need to provide the locations of your FASTQ f
 For example:
 
 ```bash
---fastqs=/scratch/jmlkha003/MJ5
+--fastqs=/scratch/jmlkha003/kramnik/kramnik_samples_2025/d17_saline_KJ1/KJ1
 ```
 
 This tells Cell Ranger where to find the FASTQ files.
@@ -60,10 +60,10 @@ This tells Cell Ranger where to find the FASTQ files.
 The path:
 
 ```text
-/scratch/jmlkha003/MJ5
+/scratch/jmlkha003/kramnik
 ```
 
-is an example of a directory path on the **UCT HPC system**. The `/scratch/` directory is a storage location on the HPC system, `jmlkha003` is the user's HPC directory, and `MJ5` is the folder containing the FASTQ files.
+is an example of a directory path on the **UCT HPC system**. The `/scratch/` directory is a storage location on the HPC system, `jmlkha003` is the user's HPC directory, and `kramnik` is the folder containing the FASTQ files.
 
 For more information about the **UCT High Performance Computing (HPC) system**, see the [UCT HPC Cluster documentation](https://ucthpc.uct.ac.za/index.php/hpc-cluster/).
 
@@ -72,7 +72,7 @@ Your own directory path will most likely be different.
 For example, if your FASTQ files are stored in another folder, you would replace:
 
 ```bash
---fastqs=/scratch/jmlkha003/MJ5
+--fastqs=/scratch/jmlkha003/kramnik
 ```
 
 with the path to your own FASTQ directory:
