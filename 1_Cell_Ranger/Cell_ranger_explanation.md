@@ -221,20 +221,17 @@ The Cell Ranger output file for this tutorial is available from the Hockman Lab 
 
 **The HTML file is too large for GitHub to display directly in the browser.**
 
-You can download the `saline_day17_web_summary.html` file using the link below and then open it in your web browser to view the interactive Cell Ranger report:
+[Open the `saline_day17_web_summary.html` file on GitHub](https://github.com/hockmanlab/SANS_2026/blob/main/1_Cell_Ranger/saline_day17_web_summary.html)
 
-[Download the `saline_day17_web_summary.html` file](https://github.com/hockmanlab/SANS_2026/blob/main/1_Cell_Ranger/saline_day17_web_summary.html)
+Once the file opens on GitHub, click the **downward arrow (⬇) download button on the right-hand side** to download the HTML file.
 
-After downloading the file, open it in your web browser to view the interactive Cell Ranger report.
+After downloading:
 
-After downloading the file:
+1. Locate the `saline_day17_web_summary.html` file in your Downloads folder.
+2. Double-click the file to open it in your web browser.
+3. You can then explore the interactive Cell Ranger report and its quality-control metrics.
 
-1. Locate the file in your **Downloads** folder.
-2. Double-click the HTML file.
-3. The file should open in your default web browser.
-4. You can then explore the Cell Ranger quality-control metrics and summary information.
-
-> **Note:** GitHub may not display this large HTML file directly. Downloading the file and opening it locally in a web browser allows the interactive report to be viewed.
+> **Note:** GitHub may not display the full interactive HTML report directly because of the file size. Downloading the file and opening it locally in a web browser allows you to view the report properly.
 
 ---
 
