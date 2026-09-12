@@ -1,4 +1,4 @@
-# 1.1 Cell Ranger Count
+# Cell Ranger Count
 
 For the official Cell Ranger documentation, see the [10x Genomics Cell Ranger documentation](https://www.10xgenomics.com/support/software/cell-ranger/latest/tutorials/cr-tutorial-ct).
 
@@ -170,7 +170,7 @@ For Cell Ranger **v7.0 and later**, intronic reads are included by default for w
 
 ---
 
-# 1.2 Cell Ranger Count Outputs
+# Cell Ranger Count Outputs
 
 After Cell Ranger finishes, the `outs/` directory contains several files and folders. These provide processed expression matrices, quality-control metrics, and files that can be used for further exploration of the data.
 
