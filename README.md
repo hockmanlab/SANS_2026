@@ -84,4 +84,4 @@ Please complete the installation before starting the practical session.
 ## System requirements
 
 The workshop was tested on macOS and Windows systems with 8 - 16 GB RAM.
-A minimum of 8 GB RAM is recommended; 16 GB or more is preferable for smoother performance. Systems with less RAM may run more slowly or encounter memory-related errors.
+A minimum of 8 GB RAM is recommended; 16 GB or more is preferable for smoother performance. Systems with less than 8 GB RAM may run more slowly or encounter memory-related errors.
