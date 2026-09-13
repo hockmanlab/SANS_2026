@@ -87,7 +87,7 @@ rather than repeating those steps.
 
 ``` r
 # Load the pre-processed Seurat object
-query <- readRDS("/Users/bismarkappiah/Documents/AA_UCT/3_clustering_and_annotation/seurat_preprocessed_SCT.rds")
+query <- readRDS("PATH/TO/seurat_preprocessed_SCT.rds")
 ```
 
 > **Important:** Replace `"PATH/TO/seurat_preprocessed_SCT.rds"` with
