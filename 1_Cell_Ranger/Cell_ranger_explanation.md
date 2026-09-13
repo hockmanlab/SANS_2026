@@ -227,16 +227,48 @@ web_summary.html
 
 This is an interactive HTML report that summarises the Cell Ranger run and provides important **quality-control metrics**.
 
-The HTML file contains information such as:
+Some of the main metrics shown include:
 
-* sequencing and mapping statistics
-* estimated number of cells
-* sequencing saturation
-* median genes detected per cell
-* median UMIs detected per cell
-* reads mapped to the genome
-* reads mapped to transcriptome features
-* other quality-control metrics
+- **Estimated number of cells:** The number of cell-associated barcodes identified by Cell Ranger.
+- **Mean reads per cell:** The average number of sequencing reads associated with each identified cell.
+- **Median genes per cell:** The median number of genes detected in each cell.
+- **Median UMI counts per cell:** The median number of unique RNA molecules detected in each cell.
+- **Sequencing saturation:** Indicates how much of the available library has been sampled by sequencing.
+- **Fraction reads in cells:** The proportion of sequencing reads associated with identified cells rather than background droplets.
+- **Reads mapped to genome:** The proportion of reads that align to the reference genome.
+- **Reads mapped confidently to transcriptome:** The proportion of reads that can be confidently assigned to annotated transcripts.
+
+These metrics provide an initial assessment of whether the library was successfully sequenced and whether the resulting data are suitable for downstream single-cell analysis.
+
+### Cell Barcodes and UMIs
+
+Two important concepts when interpreting the Cell Ranger metrics are **cell barcodes** and **UMIs**.
+
+**Cell barcodes** are short DNA sequences used to identify which cell a sequencing read came from. Each droplet receives a barcode, allowing sequencing reads to be assigned back to individual cells.
+
+**UMIs (Unique Molecular Identifiers)** are short sequences attached to individual RNA molecules. They allow Cell Ranger to distinguish original RNA molecules from duplicate copies produced during PCR amplification.
+
+In simple terms:
+
+- **Cell barcode → Which cell did the RNA come from?**
+- **UMI → Which original RNA molecule is it?**
+- **Gene → What RNA was detected?**
+
+Therefore, metrics such as **UMIs per cell** provide an estimate of the number of unique RNA molecules detected from each cell.
+
+## Knee Plot
+
+The **knee plot** shows the distribution of UMI counts across the ranked cell barcodes.
+
+- The **x-axis** shows cell barcodes ranked from the barcode with the highest number of UMIs to the barcode with the lowest number of UMIs.
+- The **y-axis** shows the number of UMIs associated with each barcode.
+- Barcodes with high UMI counts are more likely to represent **real cells**.
+- Barcodes with very low UMI counts are more likely to represent **empty droplets or background RNA**.
+- The **knee** is the region where the curve drops sharply and helps distinguish cell-associated barcodes from background.
+
+> **In simple terms:** The knee plot helps show where the real cells end and the background/empty droplets begin.
+
+Cell Ranger uses the barcode and UMI information, together with its cell-calling algorithm, to determine which barcodes are likely to represent cells.
 
 ### Viewing the Example Cell Ranger Web Summary
 
