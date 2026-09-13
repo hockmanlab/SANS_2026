@@ -1049,6 +1049,8 @@ DimPlot(
 
 ![](clustering_and_annotation_BA_files/figure-gfm/compare-annotations-1.png)<!-- -->
 
+You may get an error here saying "The RStudio Plots window may be too small to show this patchwork." Simply find the border of the bottom right box and make it larger by dragging it to the left and upwards. Once RStudio determines this plots window is large enough the two plots will appear next to each other.
+
 The two plots can be compared to determine where manual and automated
 annotation agree or disagree.
 
