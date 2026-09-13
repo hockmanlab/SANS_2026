@@ -193,6 +193,29 @@ run_count_MJ5/
 The exact files and folders can vary depending on the Cell Ranger version and the options used when running the analysis.
 
 ---
+## Main Cell Ranger Output Files
+
+The main output files are:
+
+* **`analysis/`** — contains additional Cell Ranger analysis results and outputs, including clustering and dimensional-reduction results.
+
+* **`molecule_info.h5`** — contains detailed information about detected molecules, including cell barcodes, UMIs, and associated features. This file can be used for more detailed downstream analysis.
+
+* **`cloupe.cloupe`** — a file that can be opened in **Loupe Browser** to interactively explore the single-cell dataset, including cell clusters and gene expression.
+
+* **`raw_feature_bc_matrix/`** — contains the unfiltered gene expression matrix. It includes barcodes and their associated expression counts before Cell Ranger applies cell-calling/filtering.
+
+* **`filtered_feature_bc_matrix/`** — contains the filtered gene expression matrix for the cells identified by Cell Ranger.
+
+* **`raw_feature_bc_matrix.h5`** — contains the raw expression matrix stored as a single HDF5 file.
+
+* **`filtered_feature_bc_matrix.h5`** — contains the filtered expression matrix stored as a single HDF5 file. It contains the same expression information as the three files inside the `filtered_feature_bc_matrix/` folder, but stores the information in a single file.
+
+* **`web_summary.html`** — an interactive HTML report summarising the Cell Ranger run and providing important quality-control metrics.
+
+* **`metrics_summary.csv`** — contains key Cell Ranger summary metrics in a tabular format, which can be useful for checking the overall quality of the sequencing and cell-calling results.
+
+---
 
 ## Cell Ranger Web Summary
 
@@ -232,30 +255,6 @@ After downloading:
 3. You can then explore the interactive Cell Ranger report and its quality-control metrics.
 
 > **Note:** GitHub may not display the full interactive HTML report directly because of the file size. Downloading the file and opening it locally in a web browser allows you to view the report properly.
-
----
-
-## Main Cell Ranger Output Files
-
-The main output files are:
-
-* **`analysis/`** — contains additional Cell Ranger analysis results and outputs, including clustering and dimensional-reduction results.
-
-* **`molecule_info.h5`** — contains detailed information about detected molecules, including cell barcodes, UMIs, and associated features. This file can be used for more detailed downstream analysis.
-
-* **`cloupe.cloupe`** — a file that can be opened in **Loupe Browser** to interactively explore the single-cell dataset, including cell clusters and gene expression.
-
-* **`raw_feature_bc_matrix/`** — contains the unfiltered gene expression matrix. It includes barcodes and their associated expression counts before Cell Ranger applies cell-calling/filtering.
-
-* **`filtered_feature_bc_matrix/`** — contains the filtered gene expression matrix for the cells identified by Cell Ranger.
-
-* **`raw_feature_bc_matrix.h5`** — contains the raw expression matrix stored as a single HDF5 file.
-
-* **`filtered_feature_bc_matrix.h5`** — contains the filtered expression matrix stored as a single HDF5 file. It contains the same expression information as the three files inside the `filtered_feature_bc_matrix/` folder, but stores the information in a single file.
-
-* **`web_summary.html`** — an interactive HTML report summarising the Cell Ranger run and providing important quality-control metrics.
-
-* **`metrics_summary.csv`** — contains key Cell Ranger summary metrics in a tabular format, which can be useful for checking the overall quality of the sequencing and cell-calling results.
 
 In the next section, we will read in the  **`filtered_feature_bc_matrix.h5`** and **`filtered_feature_bc_matrix/`** 
 
