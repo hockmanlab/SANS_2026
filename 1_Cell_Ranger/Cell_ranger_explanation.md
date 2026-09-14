@@ -288,7 +288,7 @@ After downloading:
 
 > **Note:** GitHub may not display the full interactive HTML report directly because of the file size. Downloading the file and opening it locally in a web browser allows you to view the report properly.
 
-In the next section, we will read in the  **`filtered_feature_bc_matrix.h5`** and **`filtered_feature_bc_matrix/`** 
+In the next section, we will read in the  **`filtered_feature_bc_matrix.h5`**.
 
 > **Note:** The exact output files can vary depending on the Cell Ranger version and options used. Always check the documentation for the version of Cell Ranger being used.
 
