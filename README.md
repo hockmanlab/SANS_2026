@@ -91,7 +91,7 @@ A minimum of 8 GB RAM is recommended; 16 GB or more is preferable for smoother p
 ### Authors
 
 **Dr Dorit Hockman**, **Dr Bismark Appiah**, and **Khadija Jamal**  
-Hockman Lab, Department of Human Cell Biology, Faculty of Health Sciences, University of Cape Town, South Africa
+Hockman Lab, Department of Human Biology, Faculty of Health Sciences, University of Cape Town, South Africa
 
 **Prof Chris Dulla** and **Videep Soni**  
 Dulla Lab, Department of Neuroscience, Tufts University School of Medicine, USA
