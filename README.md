@@ -85,3 +85,17 @@ Please complete the installation before starting the practical session.
 
 The workshop was tested on macOS and Windows systems with 8 - 16 GB RAM.
 A minimum of 8 GB RAM is recommended; 16 GB or more is preferable for smoother performance. Systems with less than 8 GB RAM may run more slowly or encounter memory-related errors.
+
+## Authors and Affiliations
+
+### Authors
+
+**Dr Dorit Hockman**, **Dr Bismark Appiah**, and **Khadija Jamal**  
+Hockman Lab, Department of Human Cell Biology, Faculty of Health Sciences, University of Cape Town, South Africa
+
+**Prof Chris Dulla** and **Videep Soni**  
+Dulla Lab, Department of Neuroscience, Tufts University School of Medicine, USA
+
+### Acknowledgements
+
+We acknowledge the contributions of the Hockman Lab at the University of Cape Town and the Dulla Lab at Tufts University School of Medicine to the development of this workshop.
